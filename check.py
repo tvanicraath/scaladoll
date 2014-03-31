@@ -27,9 +27,9 @@ class tokens:
 		self.lexed_tokens=chain(lex(lines, pygments.lexers.jvm.ScalaLexer()))
 
 	def get_next_token(self):
-		global lexed_tokens
+		self.lexed_tokens
 		try:
-			return lexed_tokens.next()
+			return self.lexed_tokens.next()
 		except StopIteration:
 			return False
 

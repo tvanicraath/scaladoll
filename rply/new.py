@@ -78,5 +78,5 @@ class BoxInt(BaseBox):
     def getint(self):
         return self.value
 
-fuck=parser.parse(lexer.lex("7"))
-print fuck.getint()
+mypar=parser.parse(lexer.lex("7"))
+print mypar.getint()
