@@ -1,40 +1,7 @@
 from rply import ParserGenerator, LexerGenerator
 from rply.token import BaseBox
 from itertools import *
-
-
-class P:
-        def __init__(self,fale):
-                        self.name = "NUMBER"
-                        self.value = 7
-                        self.lineno = None
-                        self.source_pos = None
-
-	def gettokentype(self):
-		return self.name
-
-	def getsourcepos(self):
-		return None
-
-	def getstr(self):
-		return self.value
-
-
-class mylexer:
-
-
-	def __init__(self,fake):
-		self.rac="rac"
-
-	def next(self,fake=None):
-		newt=P("rac")
-		return newt
-
-	def lex(self,s):
-		lt=[]
-		lt.append(P("ff"))
-		return chain(lt)
-
+from lexer import Lexer
 
 # This is a list of the token names. precedence is an optional list of
 # tuples which specifies order of operation for avoiding ambiguity.
@@ -68,7 +35,7 @@ def expr_op(p):
 def expr_num(p):
     return BoxInt(int(p[0].getstr()))
 
-lexer = mylexer("rac")
+lexer = Lexer("rac")
 parser = pg.build()
 
 class BoxInt(BaseBox):
