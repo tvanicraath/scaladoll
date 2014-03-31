@@ -1,43 +1,31 @@
 from rply import ParserGenerator, LexerGenerator
 from rply.token import BaseBox
 from itertools import *
-from lexer import Lexer
+from lexer import Lexer, Token
+from collections import defaultdict
 
-pg = ParserGenerator(["Token.Literal.Number.Integer", "Token.Operator"],
-        precedence=[("left", ['Token.Operator', 'MINUS'])], cache_id="myparser")
+
+pg = ParserGenerator(["Token.Literal.Number.Integer", "Token.Operator.Plus", "Token.Operator.Minus"],
+        precedence=[("right", ['Token.Operator.Plus', 'Token.Operator.Minus'])], cache_id="myparser")
 
 @pg.production("main : expr")
-
-class Node:
-	mynode=[]
-	me=""
-	def __init__(self,what):
-		self.me=what
-
-	def add(self,what):
-		self.mynode.append(what)	
-
 def main(p):
-	newnode=Node("main")
-	newnode.add(p[0])
-	return newnode
+	return ("main",p[0])
 
 
 
-@pg.production("expr : expr Token.Operator expr")
+@pg.production("expr : expr Token.Operator.Plus expr")
 def expr_op(p):
-	newnode=Node("expr_op")
-	print p[0],[1]
-	newnode.add(p[0])
-	newnode.add(p[2])
-	return newnode
+	return ("expr_add",p[0],p[2])
+
+@pg.production("expr : expr Token.Operator.Minus expr")
+def expr_op(p):
+        return ("expr_minus",p[0],p[2])
 
 
 @pg.production("expr : Token.Literal.Number.Integer")
 def expr_num(p):
-	newnode=Node("TERMINAL")
-	print p[0]
-	newnode.add(p[0])
+	return ("terminal",p[0])
 
 lexer = Lexer("bf.scala")
 parser = pg.build()
@@ -51,27 +39,18 @@ class BoxInt(BaseBox):
 
 
 
-def recprint(what):
-	return
-	print what.me
+def recprint(what,offset):
+        for i in range(0,offset):
+                print "\t",
 
-	if(isinstance(what,Node)):
-		print "upar",what.me
-		if(what.me=="TERMINAL"):
-			return
-		for child in what.mynode:
-			recprint(child)
+	if(isinstance(what,Token)):
+		print what.gettokentype(),what.getstr()
 		return
 
-	print "niche",what
-	try:
-		print "aur niche",what.name
-	except AttributeError:
-		return
+	print what[0]	
+	for which in what[1:]:
+		recprint(which,offset+1)
 
-	
-
-
-
-mypar=parser.parse(lexer.lex("7+3"))
-recprint(mypar)
+mypar=parser.parse(lexer.lex("7+3-4"))
+print mypar
+recprint(mypar,0)

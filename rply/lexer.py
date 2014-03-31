@@ -4,13 +4,25 @@ from itertools import *
 
 class Token:
 
-	def removedots(self,name):
+	def opname(self,value):
+		if(value=="+"):	return "Plus"
+		if(value=="-"):	return "Minus"
+		if(value=="*"):	return "Prod"
+		if(value=="/"):	return "Div"
+		if(value=="%"):	return "Mod"
+		return "Rachit"
+
+
+	def removedots(self,name,value):
 		name=str(name)
+		if(name=="Token.Operator"):
+			name=name+"."+self.opname(value)
+
 		return name			
 
 	
 	def __init__(self,name,value):
-		name=self.removedots(name)
+		name=self.removedots(name,value)
 		self.name=name
 		self.value=value
 		self.lineno=None
@@ -45,6 +57,8 @@ class Lexer:
 		tokens=[]
 		for token in self.lexed_tokens:
 			(name,value)=token
+			if(name=="Token.Text"):
+				continue
 			tokens.append(Token(name,value))
 
 		tokens=tokens[:-1]
