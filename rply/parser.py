@@ -7,24 +7,37 @@ pg = ParserGenerator(["Token.Literal.Number.Integer", "Token.Operator"],
         precedence=[("left", ['Token.Operator', 'MINUS'])], cache_id="myparser")
 
 @pg.production("main : expr")
+
+class Node:
+	mynode=[]
+	me=""
+	def __init__(self,what):
+		self.me=what
+
+	def add(self,what):
+		self.mynode.append(what)	
+
 def main(p):
-    return p[0]
+	newnode=Node("main")
+	newnode.add(p[0])
+	return newnode
+
+
 
 @pg.production("expr : expr Token.Operator expr")
 def expr_op(p):
-    lhs = p[0].getint()
-    rhs = p[2].getint()
-    return  BoxInt(lhs + rhs)
+	newnode=Node("expr_op")
+	print p[0],[1]
+	newnode.add(p[0])
+	newnode.add(p[2])
+	return newnode
 
-    if p[1].gettokentype() == "PLUS":
-	if p[1].getstr() == "+":
-	        return BoxInt(lhs + rhs)
-    else:
-        raise AssertionError("This is impossible, abort the time machine!")
 
 @pg.production("expr : Token.Literal.Number.Integer")
 def expr_num(p):
-    return BoxInt(int(p[0].getstr()))
+	newnode=Node("TERMINAL")
+	print p[0]
+	newnode.add(p[0])
 
 lexer = Lexer("bf.scala")
 parser = pg.build()
@@ -36,5 +49,29 @@ class BoxInt(BaseBox):
     def getint(self):
         return self.value
 
-mypar=parser.parse(lexer.lex("7+3+2"))
-print mypar
+
+
+def recprint(what):
+	return
+	print what.me
+
+	if(isinstance(what,Node)):
+		print "upar",what.me
+		if(what.me=="TERMINAL"):
+			return
+		for child in what.mynode:
+			recprint(child)
+		return
+
+	print "niche",what
+	try:
+		print "aur niche",what.name
+	except AttributeError:
+		return
+
+	
+
+
+
+mypar=parser.parse(lexer.lex("7+3"))
+recprint(mypar)

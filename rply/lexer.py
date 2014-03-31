@@ -48,8 +48,8 @@ class Lexer:
 			tokens.append(Token(name,value))
 
 		tokens=tokens[:-1]
-		for token in tokens:
-			print token.getstr(),token.gettokentype()
+#		for token in tokens:
+#			print token.getstr(),token.gettokentype()
 		return chain(tokens)
 
 
