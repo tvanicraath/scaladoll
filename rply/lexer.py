@@ -27,6 +27,9 @@ class Token:
 		if(value=="object"):	return "Object"
 		if(value=="def"):	return "Def"
 		if(value==":"):		return "Colon"
+		if(value=="var"):	return "Var"
+		if(value=="val"):	return "Val"
+		if(value=="="):		return "Equal"
 
 	def removedots(self,name,value):
 		name=str(name)
@@ -60,13 +63,18 @@ class Token:
 	
 class Lexer:
 
-	lexed_token={}	
-	def __init__(self,filename):
-                f=open(filename)
-                lines=""
-                for line in f:
-                        lines=lines+line
-                self.lexed_tokens=lex(lines, pygments.lexers.jvm.ScalaLexer())
+	lexed_token={}
+	debug=0
+	def __init__(self,filename,debug=0):
+		self.debug=debug
+		try:
+	                f=open(filename)
+        	        lines=""
+                	for line in f:
+                        	lines=lines+line
+	                self.lexed_tokens=lex(lines, pygments.lexers.jvm.ScalaLexer())
+		except TypeError:
+			return
 	
 	def tokenize_string(self,string):
 		self.lexed_tokens={}
@@ -80,9 +88,9 @@ class Lexer:
 			(name,value)=token
 			if(str(name)=="Token.Text"):	continue
 			tokens.append(Token(name,value))
-
-		for token in tokens:
-			print token.getstr(),token.gettokentype()
+		if(self.debug):
+			for token in tokens:
+				print token.getstr(),token.gettokentype()
 		return chain(tokens)
 
 
