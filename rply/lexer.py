@@ -1,6 +1,7 @@
 from pygments import *
 import pygments.lexers.jvm
 from itertools import *
+import sys
 
 class Token:
 
@@ -30,6 +31,10 @@ class Token:
 		if(value=="var"):	return "Var"
 		if(value=="val"):	return "Val"
 		if(value=="="):		return "Equal"
+		if(value=="if"):	return "If"
+		if(value=="else"):	return "Else"
+		if(value=="for"):	return "For"
+		if(value=="else"):	return "Else"
 
 	def removedots(self,name,value):
 		name=str(name)
@@ -49,17 +54,21 @@ class Token:
 		name=self.removedots(name,value)
 		self.name=name
 		self.value=value
-		self.lineno=None
-		self.sourcepos=None
+		self.lineno=5
+		self.sourcepos=34
+		self.type=None
 	
 	def gettokentype(self):
 		return self.name
 
         def getsourcepos(self):
-                return None
+                return self.sourcepos
 
         def getstr(self):
                 return self.value
+
+	def gettype(self):
+		return self.type
 	
 class Lexer:
 
@@ -88,11 +97,64 @@ class Lexer:
 			(name,value)=token
 			if(str(name)=="Token.Text"):	continue
 			tokens.append(Token(name,value))
+
+		tokens=self.rename_tokens(tokens)
+
 		if(self.debug):
 			for token in tokens:
-				print token.getstr(),token.gettokentype()
+				if(token.gettokentype()=="Token.Name"):
+					print token.getstr(),token.gettokentype(),token.gettype()
+				else:
+					print token.getstr(),token.gettokentype()
+
 		return chain(tokens)
 
+
+	def rename_tokens(self,tokens):
+		start_of_scope=["Token.Keyword.Def","Token.Keyword.If","Token.Keyword.Else","Token.Keyword.For","Token.Keyword.While"]
+		variable_names={}
+		token_type={}
+		i=0
+		uniq_counter=102
+		curly_count=0
+
+		for token in tokens:
+			if(token.name in start_of_scope):	curly_count+=1
+			if(token.name=="Token.Operator.RCurl"):
+				for name in variable_names.keys():
+					(oldname,ccount)=variable_names[name][-1]
+					if(ccount==curly_count):
+						variable_names[name].pop()
+					if(len(variable_names[name])==0):
+						del variable_names[name]
+
+				curly_count-=1
+
+			if(token.name=="Token.Name"):
+				if(tokens[i+1].name=="Token.Keyword.Colon"):
+					#declaration
+					newname=token.value+str(uniq_counter)
+					if(token.value in variable_names):
+						variable_names[token.value].append((newname,curly_count))
+					else:
+						 variable_names[token.value]=[]
+						 variable_names[token.value].append((newname,curly_count))
+					uniq_counter+=1
+					token.value=newname
+					token.type=tokens[i+2].value
+					token_type[newname]=token.type
+
+				else:
+					#use
+					if(not token.value in variable_names):
+						sys.exit("[Sementic Error] Cannot use variable '"+ token.value + "' without initializing it.")
+					(newname,scope)=variable_names[token.value][-1]
+					token.value=newname
+					token.type=token_type[newname]
+
+			i+=1
+
+		return tokens
 
 def main():
 	rac=Lexer("hw.scala")

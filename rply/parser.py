@@ -7,7 +7,7 @@ import sys
 
 class Parser:
 
-	pg = ParserGenerator(["Token.Literal.Number.Float","Token.Keyword.Val","Token.Keyword.Var","Token.Keyword.Equal","Token.Operator.Equal","Token.Keyword.Constant","Token.Keyword.Colon","Token.Keyword.Def","Token.Keyword.Object","Token.Name.Print","Token.Operator.Plus","Token.Operator.Prod","Token.Operator.Minus","Token.Operator.Div","Token.Operator.Mod","Token.Literal.Number.Integer", "Token.Name", "Token.Keyword.Type", "Token.Operator","Token.Name.Class","Token.Text", "Token.Keyword", "Token.Literal.String","Token.Operator.LCurl","Token.Operator.RCurl","Token.Operator.LBrac","Token.Operator.LSquare","Token.Operator.RSquare","Token.Operator.RBrac", "Token.Operator.SColon"],        precedence=[("left", ['Token.Operator', 'MINUS'])], cache_id="myparser")
+	pg = ParserGenerator(["Token.Keyword.If","Token.Keyword.Else","Token.Keyword.For","Token.Keyword.While","Token.Literal.Number.Float","Token.Keyword.Val","Token.Keyword.Var","Token.Keyword.Equal","Token.Operator.Equal","Token.Keyword.Constant","Token.Keyword.Colon","Token.Keyword.Def","Token.Keyword.Object","Token.Name.Print","Token.Operator.Plus","Token.Operator.Prod","Token.Operator.Minus","Token.Operator.Div","Token.Operator.Mod","Token.Literal.Number.Integer", "Token.Name", "Token.Keyword.Type", "Token.Operator","Token.Name.Class","Token.Text", "Token.Keyword", "Token.Literal.String","Token.Operator.LCurl","Token.Operator.RCurl","Token.Operator.LBrac","Token.Operator.LSquare","Token.Operator.RSquare","Token.Operator.RBrac", "Token.Operator.SColon"],        precedence=[("left", ['Token.Operator', 'MINUS'])], cache_id="myparser")
 
 	@pg.production("main : start")
 	def main(p):

@@ -8,7 +8,7 @@ def myfunction(mypar):
 	print mypar
 
 def main():
-	parser=Parser(myfunction,0)
+	parser=Parser(myfunction,1)
 
 
 main()
