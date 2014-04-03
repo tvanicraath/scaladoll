@@ -19,6 +19,7 @@ class Token:
 		if(value=="]"): return "RSquare"
 		if(value==";"):	return "SColon"
 		if(value=="="):	return "Equal"
+		if(value=="@@@"):	return "LineSeperator"
 		return "Rachit"
 
 	def namename(self,value):
@@ -35,6 +36,7 @@ class Token:
 		if(value=="else"):	return "Else"
 		if(value=="for"):	return "For"
 		if(value=="else"):	return "Else"
+		if(value=="Array"):	return "Array"
 
 	def removedots(self,name,value):
 		name=str(name)
@@ -46,6 +48,9 @@ class Token:
 		if(name=="Token.Keyword"):
 			if(self.keyname(value)):
 				name=name+"."+self.keyname(value)
+		if(value=="Array"):
+			name="Token.Keyword.Array"
+
 
 		return name			
 
@@ -62,7 +67,7 @@ class Token:
 		return self.name
 
         def getsourcepos(self):
-                return self.sourcepos
+                return self.lineno
 
         def getstr(self):
                 return self.value
@@ -74,14 +79,16 @@ class Lexer:
 
 	lexed_token={}
 	debug=0
+	filename=None
 	def __init__(self,filename,debug=0):
 		self.debug=debug
 		try:
 	                f=open(filename)
         	        lines=""
                 	for line in f:
-                        	lines=lines+line
+                        	lines=lines+line+"@@@"
 	                self.lexed_tokens=lex(lines, pygments.lexers.jvm.ScalaLexer())
+			self.filename=filename
 		except TypeError:
 			return
 	
@@ -93,10 +100,17 @@ class Lexer:
 		if(string):
 			self.tokenize_string(string)
 		tokens=[]
+		line_count=1
 		for token in self.lexed_tokens:
 			(name,value)=token
+			if(value=="="):
+				name="Token.Operator"
 			if(str(name)=="Token.Text"):	continue
+			if(str(value)=="@@@"):
+				line_count+=1
+				continue
 			tokens.append(Token(name,value))
+			tokens[-1].lineno=line_count
 
 		tokens=self.rename_tokens(tokens)
 
@@ -131,10 +145,14 @@ class Lexer:
 				curly_count-=1
 
 			if(token.name=="Token.Name"):
-				if(tokens[i+1].name=="Token.Keyword.Colon"):
+			   try:
+				if(len(tokens)>(i+1) and tokens[i+1].name=="Token.Keyword.Colon"):
 					#declaration
-					newname=token.value+str(uniq_counter)
+					newname=token.value+"@"+str(uniq_counter)
 					if(token.value in variable_names):
+						(oldname,oldscope)=variable_names[token.value][-1]
+						if(oldscope==curly_count):
+							sys.exit("[Sementic Error] Cannot redeclare variable '"+ token.value + "' in same scope as '"+token.value+"' (Line: "+str(token.getsourcepos())+").")
 						variable_names[token.value].append((newname,curly_count))
 					else:
 						 variable_names[token.value]=[]
@@ -144,13 +162,19 @@ class Lexer:
 					token.type=tokens[i+2].value
 					token_type[newname]=token.type
 
+				elif(len(tokens)>(i+1) and tokens[i+1].name=="Token.Operator.LBrac"):
+					#its function, do nothing
+					pass
+
 				else:
 					#use
 					if(not token.value in variable_names):
-						sys.exit("[Sementic Error] Cannot use variable '"+ token.value + "' without initializing it.")
+						sys.exit("[Sementic Error] Cannot use variable '"+ token.value + "' without initializing it (Line: "+str(token.getsourcepos())+").")
 					(newname,scope)=variable_names[token.value][-1]
 					token.value=newname
 					token.type=token_type[newname]
+			   except IndexError:
+				sys.exit("[Sementic Error] Cannot use variable '"+ token.value + "' without initializing it (Line: "+str(token.getsourcepos())+").")
 
 			i+=1
 
