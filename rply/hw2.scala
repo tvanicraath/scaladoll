@@ -1,2 +1,3 @@
-var s:Int
-s=7.7
+def fun(x: Int)	: Void = {
+	x=1
+}

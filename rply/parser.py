@@ -38,13 +38,35 @@ class Parser:
 				"Token.Operator.RSquare",
 				"Token.Operator.RBrac",
 				"Token.Operator.SColon",
+				"Token.Operator.Comma",
+				"Token.Operator.LT",
+				"Token.Operator.LE",
+				"Token.Operator.GE",
+				"Token.Operator.GT",
+				"Token.Operator.EE",
+				"Token.Operator.NE",
+				"Token.Operator.And",
+				"Token.Operator.Or",
+				"Token.Operator.Xor",
 				"Token.Operator",
 
 				"Token.Name.Print",
 				"Token.Name",
 				"Token.Name.Class",
 				"Token.Text"],
-				precedence=[("left", ['Token.Operator'])], 
+				precedence=[	("left", ['Token.Operator']),
+						("right", ['Token.Operator.Equal']),
+						("left", ['Token.Operator.Plus','Token.Operator.Minus']),
+						("left", ['Token.Operator.Prod','Token.Operator.Div']),
+						("left", ['Token.Operator.Mod']),
+						("left", ['Token.Operator.And']),
+						("left", ['Token.Operator.Or']),
+						("right", ['Token.Operator.Xor']),
+						("left", ['Token.Operator.EE']),
+						("left", ['Token.Operator.LT','Token.Operator.GE','Token.Operator.LE','Token.Operator.GT']),
+						("left", ['Token.Operator.NE'])
+
+				], 
 				cache_id="myparser")
 
 	@pg.production("main : start")
@@ -61,7 +83,7 @@ class Parser:
 	def start_op3(p):
 		return ("Start",p[0])
 
-        @pg.production("function : Token.Keyword.Def Token.Name Token.Operator.LBrac arglist Token.Operator.RBrac Token.Keyword.Colon vtype Token.Operator.LCurl multiexpr Token.Operator.RCurl")
+        @pg.production("function : Token.Keyword.Def Token.Name Token.Operator.LBrac arglist Token.Operator.RBrac Token.Keyword.Colon vtype Token.Operator.Equal Token.Operator.LCurl multiexpr Token.Operator.RCurl")
         def fun_op(p):
                 return ("Function",p[1],p[3],p[6],p[8])
 	
@@ -83,8 +105,10 @@ class Parser:
 
 	@pg.production("arglist : Token.Name Token.Keyword.Colon vtype")
 	def arglist_op(p):
-		return ("Arglist",p[0],p[2])
-	
+		return ("Arglist",(p[0],p[2]))
+	@pg.production("arglist : arglist Token.Operator.Comma Token.Name Token.Keyword.Colon vtype")
+	def arglist_op(p):
+		p[0].append((p[2],p[4]))
 
 	@pg.production("multiexpr : expr multiexpr")
 	def multiexpr_op(p):
@@ -93,13 +117,53 @@ class Parser:
 	def multiexpr_op2(p):
 		return ("Void MultiExpr",p[0])
 	
+	@pg.production("expr : Token.Keyword.If Token.Operator.LBrac expr Token.Operator.RBrac Token.Operator.LCurl multiexpr Token.Operator.RCurl Else_Cond")
+	def expr_if(p):
+		print "--------",p[2]
+                t0=p[2][0].split(" ")[0]
+		(fake,target)=p[7]
+		if t0 != "Int":
+			raise AssertionError("[Sementic Error] Expression should be boolean '"+p[1].getstr()+"' at Line: "+str(p[1].getsourcepos()))	
+		return ("Void If",p[2], p[5], target) 
+	
+
+	@pg.production("Else_Cond : Token.Keyword.Else Token.Operator.LCurl multiexpr Token.Operator.RCurl")	
+	def expr_else1(p):
+		return ("Void Else",p[2])	
+	@pg.production("Else_Cond : eps")
+	def expr_else2(p):
+		return ("Void Else",p[0])
+	
+	
+	
 	
 	@pg.production("expr : Token.Name.Print Token.Operator.LBrac Token.Literal.String Token.Operator.RBrac")
 	def bigexpr_op(p):
 		return ("Void Print",p[2])
+
+        @pg.production("expr : expr Token.Operator.And expr")
+        @pg.production("expr : expr Token.Operator.Or expr")
+        @pg.production("expr : expr Token.Operator.Xor expr")
+	def expr_op3(p):
+		if(p[0][0].split(" ")[0]=="Int" and p[2][0].split(" ")[0]=="Int"):
+			return("Int Exp",p[1],p[0],p[2])
+		raise AssertionError("[Sementic Error] Type mismatch at '"+p[1].getstr()+"' at Line: "+str(p[1].getsourcepos()))
 	
-	
-	
+	@pg.production("expr : expr Token.Operator.LE expr")
+	@pg.production("expr : expr Token.Operator.GE expr")
+	@pg.production("expr : expr Token.Operator.LT expr")
+	@pg.production("expr : expr Token.Operator.GT expr")
+	@pg.production("expr : expr Token.Operator.EE expr")
+	@pg.production("expr : expr Token.Operator.NE expr")
+        def expr_op2(p):
+                (type,fake)=p[0]
+                t0=type.split(" ")[0]
+                (type,fake)=p[2]
+                t2=type.split(" ")[0]
+                if(t0=="String" or t2=="String"):
+                        raise AssertionError("[Sementic Error] Type mismatch at '"+p[1].getstr()+"' at Line: "+str(p[1].getsourcepos()))
+		return("Int EXP",p[1],p[0],p[2])
+
 	@pg.production("expr : expr Token.Operator.Plus expr")
 	@pg.production("expr : expr Token.Operator.Minus expr")
 	@pg.production("expr : expr Token.Operator.Prod expr")
@@ -113,7 +177,7 @@ class Parser:
 		if(t0=="String" or t2=="String"):
 			raise AssertionError("[Sementic Error] Type mismatch at '"+p[1].getstr()+"' at Line: "+str(p[1].getsourcepos()))
 		t00="Int"
-		if(t0=="Float" or t1=="Float"):	t00="Float"
+		if(t0=="Float" or t2=="Float"):	t00="Float"
 		return (t00+" EXP",p[1],p[0],p[2])
 	
 	
@@ -169,10 +233,10 @@ class Parser:
 		type=type.split(" ")[0]
 		return (type+" UMINUS", p[1])
 	
-	@pg.production("expr : eps")
-	def expr_eps(p):
-	    print ("Expr",p[0])
-	    return 
+	#@pg.production("expr : eps")
+	#def expr_eps(p):
+	#    print ("Expr",p[0])
+	#    return 
 	
 	@pg.production("eps : ")
 	def eps(p):
@@ -191,6 +255,19 @@ class Parser:
 		for which in what[1:]:
 			self.recprint(which,offset+1)
 
+	def readfromprompt(self):
+		lines=""
+		line=raw_input("scaladoll > ")
+		lines=lines+line+"@@@\n"
+		while(1):
+			line=raw_input("... > ")
+			if(line=="@"):
+				break
+			if(line==""):
+				continue
+			lines=lines+line+"@@@\n"
+		return lines
+
 	def __init__(self,afterparse,debug):
 		parser=self.pg.build()
 	        if(len(sys.argv)>1):
@@ -203,7 +280,7 @@ class Parser:
 		else:
 	                while(1):
         	                lexer=Lexer(None,debug)
-	                        mypar=parser.parse(lexer.lex(raw_input("scaladoll> ")))
+	                        mypar=parser.parse(lexer.lex(self.readfromprompt()))
         	                if(debug):	self.recprint(mypar,0)
 				afterparse(mypar)	
 
