@@ -4,15 +4,6 @@ from itertools import *
 from lexer import Lexer, Token
 from collections import defaultdict
 import sys
-seed=118
-
-def newvar(type):
-		global seed
-                seed+=1
-                if(type=="Int"):        return "t@@"+str(seed)
-                if(type=="Float"):      return "f@@"+str(seed)
-                if(type=="String"):     return "s@@"+str(seed)
-
 
 class Parser:
 
@@ -228,10 +219,7 @@ class Parser:
 	
 	@pg.production("expr_atomic : Token.Literal.Number.Integer")
 	def expr_num(p):
-		L=[]
-		L.append(newvar("Int")+" assign "+p[0].getstr())
-		print L
-		return ("Int Const",p[0])
+	    return ("Int Const",p[0])
 	@pg.production("expr_atomic : Token.Literal.Number.Float")
 	def expr_float(p):
 		return ("Float Const",p[0])
@@ -241,7 +229,6 @@ class Parser:
 	
 	@pg.production("expr_atomic : Token.Keyword.Constant")
 	def expr_const(p):
-		raise AssertionError("hey dude! what brought you here? o.O")
 		return ("CONSTANT",p[0])
 	@pg.production("expr : Token.Operator.Minus expr_atomic")
 	def epr_op2(p):
@@ -299,6 +286,13 @@ class Parser:
 	                        mypar=parser.parse(lexer.lex(self.readfromprompt()))
         	                if(debug):	self.recprint(mypar,0)
 				afterparse(mypar)
+
+	def newvar(self,type):
+		self.seed+=1
+		if(type=="Int"):	return "t@@"+str(self.seed)
+		if(type=="Float"):	return "f@@"+str(self.seed)
+		if(type=="String"):	return "s@@"+str(self.seed)
+
 
 def main():
 	parser=Parser(function_name,debug=1)
