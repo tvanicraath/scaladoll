@@ -154,6 +154,13 @@ class Lexer:
 
 				curly_count-=1
 
+			if(token.name=="Token.Literal.Number.Integer"):
+				token.type="Int"
+			if(token.name=="Token.Literal.Number.Float"):
+				token.type="Float"
+			if(token.name=="Token.Literal.String"):
+				token.type="String"
+
 			if(token.name=="Token.Name"):
 			   try:
 				if(len(tokens)>(i+1) and tokens[i+1].name=="Token.Keyword.Colon"):

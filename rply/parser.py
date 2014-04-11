@@ -3,7 +3,7 @@ from rply.token import BaseBox
 from itertools import *
 from lexer import Lexer, Token
 from collections import defaultdict
-import sys
+import sys,os
 seed=118
 
 def newvar(type):
@@ -168,9 +168,9 @@ class Parser:
 	@pg.production("expr : expr Token.Operator.EE expr")
 	@pg.production("expr : expr Token.Operator.NE expr")
         def expr_op2(p):
-                (type,fake)=p[0]
+                type=p[0][0]
                 t0=type.split(" ")[0]
-                (type,fake)=p[2]
+                type=p[2][0]
                 t2=type.split(" ")[0]
                 if(t0=="String" or t2=="String"):
                         raise AssertionError("[Sementic Error] Type mismatch at '"+p[1].getstr()+"' at Line: "+str(p[1].getsourcepos()))
@@ -182,9 +182,10 @@ class Parser:
 	@pg.production("expr : expr Token.Operator.Div expr")
 	@pg.production("expr : expr Token.Operator.Mod expr")
 	def expr_op(p):
-                (type,fake)=p[0]
+		print p[0]
+                type=p[0][0]
                 t0=type.split(" ")[0]
-                (type,fake)=p[2]
+                type=p[2][0]
                 t2=type.split(" ")[0]
 		if(t0=="String" or t2=="String"):
 			raise AssertionError("[Sementic Error] Type mismatch at '"+p[1].getstr()+"' at Line: "+str(p[1].getsourcepos()))
@@ -202,7 +203,7 @@ class Parser:
 	@pg.production("expr : Token.Name Token.Operator.Equal expr")
 	def var_init(p):
 		t0=p[0].type
-                (type,fake)=p[2]
+                type=p[2][0]
                 t1=type.split(" ")[0]
 		if(t0=="Int" or t0=="Float"):	t0="Int"
 		if(t1=="Int" or t1=="Float"):	t1="Int"
@@ -228,9 +229,6 @@ class Parser:
 	
 	@pg.production("expr_atomic : Token.Literal.Number.Integer")
 	def expr_num(p):
-		L=[]
-		L.append(newvar("Int")+" assign "+p[0].getstr())
-		print L
 		return ("Int Const",p[0])
 	@pg.production("expr_atomic : Token.Literal.Number.Float")
 	def expr_float(p):
@@ -239,16 +237,17 @@ class Parser:
 	def expr_var(p):
 		return (p[0].type+" VAR", p[0])
 	
+        @pg.production("expr : Token.Operator.Minus expr_atomic")
+        def epr_op2(p):
+                (type,fake)=p[1]
+                type=type.split(" ")[0]
+                return (type+" UMINUS", p[1])
+
 	@pg.production("expr_atomic : Token.Keyword.Constant")
 	def expr_const(p):
 		raise AssertionError("hey dude! what brought you here? o.O")
 		return ("CONSTANT",p[0])
-	@pg.production("expr : Token.Operator.Minus expr_atomic")
-	def epr_op2(p):
-		(type,fake)=p[1]
-		type=type.split(" ")[0]
-		return (type+" UMINUS", p[1])
-	
+
 	#@pg.production("expr : eps")
 	#def expr_eps(p):
 	#    print ("Expr",p[0])
@@ -274,12 +273,20 @@ class Parser:
 	def readfromprompt(self):
 		lines=""
 		line=raw_input("scaladoll > ")
+		if(line=="clear"):
+			return "CLEAR"
+		if(line=="exit"):
+			return "EXIT"
 		lines=lines+line+"@@@\n"
+		blankcount=0
 		while(1):
 			line=raw_input("... > ")
 			if(line=="@"):
 				break
 			if(line==""):
+				blankcount+=1
+				if(blankcount>3):
+					break
 				continue
 			lines=lines+line+"@@@\n"
 		return lines
@@ -294,13 +301,21 @@ class Parser:
 			afterparse(mypar)
 		
 		else:
+			oldlines=""
 	                while(1):
         	                lexer=Lexer(None,debug)
-	                        mypar=parser.parse(lexer.lex(self.readfromprompt()))
+				newline=self.readfromprompt()
+				if(newline=="CLEAR"):
+					oldlines=""
+					os.system('clear')
+					continue
+				if(newline=="EXIT"):
+					return
+				oldlines=oldlines+newline
+	                        mypar=parser.parse(lexer.lex(oldlines))
         	                if(debug):	self.recprint(mypar,0)
 				afterparse(mypar)
 
 def main():
 	parser=Parser(function_name,debug=1)
 #main()
-
