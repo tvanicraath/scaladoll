@@ -66,18 +66,17 @@ class Parser:
 				"Token.Name",
 				"Token.Name.Class",
 				"Token.Text"],
-				precedence=[	("left", ['Token.Operator']),
-						("right", ['Token.Operator.Equal']),
+				precedence=[	("left", ['Token.Operator.NE']),
+                                                ("left", ['Token.Operator.EE']),
+                                                ("left", ['Token.Operator.LT','Token.Operator.GE','Token.Operator.LE','Token.Operator.GT']),
+                                                ("right", ['Token.Operator.Xor']),
+                                                ("left", ['Token.Operator.And']),
+                                                ("left", ['Token.Operator.Or']),
+                                                ("left", ['Token.Operator.Mod']),
+                                                ("left", ['Token.Operator.Prod','Token.Operator.Div']),
 						("left", ['Token.Operator.Plus','Token.Operator.Minus']),
-						("left", ['Token.Operator.Prod','Token.Operator.Div']),
-						("left", ['Token.Operator.Mod']),
-						("left", ['Token.Operator.And']),
-						("left", ['Token.Operator.Or']),
-						("right", ['Token.Operator.Xor']),
-						("left", ['Token.Operator.EE']),
-						("left", ['Token.Operator.LT','Token.Operator.GE','Token.Operator.LE','Token.Operator.GT']),
-						("left", ['Token.Operator.NE'])
-
+                                                ("right", ['Token.Operator.Equal']),
+						("left", ['Token.Operator']),
 				], 
 				cache_id="myparser")
 
@@ -235,7 +234,7 @@ class Parser:
 		return ("Float Const",p[0])
 	@pg.production("expr_atomic : Token.Name")
 	def expr_var(p):
-		return (p[0].type+" VAR", p[0])
+		return (p[0].type+" ASSIGN", p[0])
 	
         @pg.production("expr : Token.Operator.Minus expr_atomic")
         def epr_op2(p):
@@ -273,14 +272,14 @@ class Parser:
 	def readfromprompt(self):
 		lines=""
 		line=raw_input("scaladoll > ")
-		if(line=="clear"):
-			return "CLEAR"
-		if(line=="exit"):
-			return "EXIT"
+		if(line.upper() in ("CLEAR","EXIT")):
+			return line.upper()
 		lines=lines+line+"@@@\n"
 		blankcount=0
 		while(1):
 			line=raw_input("... > ")
+	                if(line.upper() in ("CLEAR","EXIT")):
+        	               return line.upper()
 			if(line=="@"):
 				break
 			if(line==""):
