@@ -66,16 +66,17 @@ class Parser:
 				"Token.Name",
 				"Token.Name.Class",
 				"Token.Text"],
-				precedence=[	("left", ['Token.Operator.NE']),
+				precedence=[	
+						("right", ['Token.Operator.Equal']),
+						("left", ['Token.Operator.NE']),
                                                 ("left", ['Token.Operator.EE']),
                                                 ("left", ['Token.Operator.LT','Token.Operator.GE','Token.Operator.LE','Token.Operator.GT']),
                                                 ("right", ['Token.Operator.Xor']),
                                                 ("left", ['Token.Operator.And']),
                                                 ("left", ['Token.Operator.Or']),
                                                 ("left", ['Token.Operator.Mod']),
-                                                ("left", ['Token.Operator.Prod','Token.Operator.Div']),
 						("left", ['Token.Operator.Plus','Token.Operator.Minus']),
-                                                ("right", ['Token.Operator.Equal']),
+                                                ("left", ['Token.Operator.Prod','Token.Operator.Div']),
 						("left", ['Token.Operator']),
 				], 
 				cache_id="myparser")
@@ -216,6 +217,11 @@ class Parser:
 			raise AssertionError("[Sementic Error] Type mismatch at '"+p[0].getstr().split("@")[0]+"' at Line: "+str(p[0].getsourcepos()))
 			
 	
+	@pg.production("expr : Token.Operator.LBrac expr Token.Operator.RBrac")
+	def expr_brac(p):
+		type=p[1][0].split(" ")[0]
+		return (type+" EXP", p[1]);
+
 	@pg.production("expr : expr_atomic")
 	def expr_atomic(p):
 		(type,fake)=p[0]
