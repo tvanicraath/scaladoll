@@ -47,6 +47,7 @@ class Token:
 		if(value=="for"):	return "For"
 		if(value=="else"):	return "Else"
 		if(value=="Array"):	return "Array"
+		if(value=="while"):	return "While"
 
 	def removedots(self,name,value):
 		name=str(name)

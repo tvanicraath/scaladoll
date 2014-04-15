@@ -128,10 +128,17 @@ class Parser:
 	@pg.production("multiexpr : eps")
 	def multiexpr_op2(p):
 		return ("Void MultiExpr",p[0])
+
+	@pg.production("expr : Token.Keyword.While Token.Operator.LBrac expr Token.Operator.RBrac Token.Operator.LCurl multiexpr Token.Operator.RCurl")
+	def while_op(p):
+		t0=p[2][0].split(" ")[0]
+		if(t0 != "Int"):
+			raise AssertionError("[Sementic Error] Expression should be boolean '"+p[1].getstr()+"' at Line: "+str(p[1].getsourcepos()))
+		return ("Void While",p[2],p[5])
 	
 	@pg.production("expr : Token.Keyword.If Token.Operator.LBrac expr Token.Operator.RBrac Token.Operator.LCurl multiexpr Token.Operator.RCurl Else_Cond")
 	def expr_if(p):
-		print "--------",p[2]
+		#print "--------",p[2]
                 t0=p[2][0].split(" ")[0]
 		(fake,target)=p[7]
 		if t0 != "Int":

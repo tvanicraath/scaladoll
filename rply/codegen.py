@@ -100,6 +100,22 @@ def recprint(what,offset):
 
 			return ( (None,None), L)
 
+		if(what[0].split(" ")[-1]=="While"):
+			condn=recprint(what[1],offset+1)
+			strue=recprint(what[2],offset+1)
+			
+			L=[]
+			L=condn[1]
+			condvar=condn[0][0]
+			condtype=condn[0][1]
+
+			strue[1].append( ( ( ("->", "SKIP"), ("LINE", int(-(len(condn[1])+1+len(strue[1])))) ), "SKIP") )
+
+			condnstmnt = ( ( (condvar,condtype), ("?", "IF"), ("->", "SKIP"), ("LINE", len(strue[1])) ), "WHILE_IF")
+
+			L.append( condnstmnt );
+			L=L+strue[1];
+			return ( (None, None), L)
 
 		print what[0]+"MAY NOT WORK"
                 for which in what[1:]:
