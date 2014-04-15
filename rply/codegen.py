@@ -78,6 +78,29 @@ def recprint(what,offset):
 		if(what[0]=="ASSIGN"):
 			return ( (None,None), [])
 
+		if(what[0].split(" ")[-1]=="If"):
+			condn=recprint(what[1],offset+1)
+			sif=recprint(what[2],offset+1)
+			selse=recprint(what[3],offset+1)
+
+			L=[]
+			L=condn[1]
+			condvar=condn[0][0]
+			condtype=condn[0][1]
+
+			sizeif=len(sif[1])
+			sizeelse=len(selse[1])
+		
+			selse[1].append( ( ( ('->', 'SKIP'), ('LINE', sizeif) ), 'SKIP') )
+
+			condstmnt = ( ( (condvar,condtype), ('?', 'IF'), ('->', 'SKIP'), ('LINE', sizeelse+1) ), 'IF')
+			
+			L.append(condstmnt)
+			L=L+selse[1]+sif[1]
+
+			return ( (None,None), L)
+
+
 		print what[0]+"MAY NOT WORK"
                 for which in what[1:]:
                         recprint(which,offset+1)
@@ -90,7 +113,7 @@ def myfunction(mypar):
 		print l
 
 def main():
-	parser=Parser(myfunction,0)
+	parser=Parser(myfunction,1)
 
 
 main()
