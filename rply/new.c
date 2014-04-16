@@ -1,7 +1,10 @@
 #include<stdio.h>
 
 int main()	{
-	float x=2.0;
-	printf("%f rac",x);
-//	return 0;
+	printf("hello\n");
+	printf("hello2\n");
+	int x=909090909;
+	printf("%d",x);
+	float y=2.3456;
+	printf("%f",y);
 }

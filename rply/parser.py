@@ -184,7 +184,14 @@ class Parser:
 	
 	@pg.production("expr : Token.Name.Print Token.Operator.LBrac Token.Literal.String Token.Operator.RBrac")
 	def bigexpr_op(p):
-		return ("Void Print",p[2])
+		return ("Void PrintString",p[2])
+	@pg.production("expr : Token.Name.Print Token.Operator.LBrac expr Token.Operator.RBrac")
+	def print_expr(p):
+		if(p[2][0].split(" ")[0]=="Int"):
+			return ("Int PrintInt",p[2])
+		if(p[2][0].split(" ")[0]=="Float"):
+			return ("Float PrintFloat",p[2])
+		raise AssertionError("[Sementic Error] Type mismatch at '"+p[1].getstr()+"' at Line: "+str(p[1].getsourcepos()))
 
         @pg.production("expr : expr Token.Operator.And expr")
         @pg.production("expr : expr Token.Operator.Or expr")
