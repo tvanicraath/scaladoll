@@ -31,6 +31,8 @@ class Parser:
 				"Token.Keyword.Var",
 				"Token.Keyword.Type",
 				"Token.Keyword.Array",
+				"Token.Keyword.InRange",
+				"Token.Keyword.To",
 				"Token.Keyword",
 
                                 "Token.Literal.Number.Float",
@@ -124,7 +126,11 @@ class Parser:
 
 	@pg.production("multiexpr : expr multiexpr")
 	def multiexpr_op(p):
-		return ("Void MultiExpr",p[0],p[1])
+		newtype=p[1][0].split(" ")[0]
+		if(newtype=="Void"):
+			newtype=p[0][0].split(" ")[0]
+		#print newtype
+		return (newtype+" MultiExpr",p[0],p[1])
 	@pg.production("multiexpr : eps")
 	def multiexpr_op2(p):
 		return ("Void MultiExpr",p[0])
@@ -134,26 +140,38 @@ class Parser:
 		t0=p[2][0].split(" ")[0]
 		if(t0 != "Int"):
 			raise AssertionError("[Sementic Error] Expression should be boolean '"+p[1].getstr()+"' at Line: "+str(p[1].getsourcepos()))
-		return ("Void While",p[2],p[5])
+		truetype=p[5][0].split(" ")[0]
+		return (truetype+" While",p[2],p[5])
 	
 	@pg.production("expr : Token.Keyword.If Token.Operator.LBrac expr Token.Operator.RBrac Token.Operator.LCurl multiexpr Token.Operator.RCurl Else_Cond")
 	def expr_if(p):
 		#print "--------",p[2]
                 t0=p[2][0].split(" ")[0]
-		(fake,target)=p[7]
+		target=p[7][1]
 		if t0 != "Int":
-			raise AssertionError("[Sementic Error] Expression should be boolean '"+p[1].getstr()+"' at Line: "+str(p[1].getsourcepos()))	
-		return ("Void If",p[2], p[5], target) 
+			raise AssertionError("[Sementic Error] Expression should be boolean '"+p[1].getstr()+"' at Line: "+str(p[1].getsourcepos()))
+		iftype=p[5][0].split(" ")[0]
+		elsetype=p[7][0].split(" ")[0]
+		if(elsetype!="Void"):
+			if(iftype!=elsetype):
+				raise AssertionError("[Sementic Error] If/Else return type mismatch at '"+p[1].getstr()+"' at Line: "+str(p[1].getsourcepos()))
+		return (iftype+" If",p[2], p[5], target) 
 	
 
 	@pg.production("Else_Cond : Token.Keyword.Else Token.Operator.LCurl multiexpr Token.Operator.RCurl")	
 	def expr_else1(p):
-		return ("Void Else",p[2])	
+		return (p[2][0].split(" ")[0]+" Else",p[2])
 	@pg.production("Else_Cond : eps")
 	def expr_else2(p):
 		return ("Void Else",p[0])
 	
-	
+
+	@pg.production("expr : Token.Keyword.For Token.Operator.LBrac Token.Name Token.Keyword.InRange expr Token.Keyword.To expr Token.Operator.RBrac Token.Operator.LCurl multiexpr Token.Operator.RCurl")
+	def for_range(p):
+		if(p[4][0].split(" ")[0]!="Int"):	raise AssertionError("[Sementic Error] Expression should be boolean '"+p[4].getstr()+"' at Line: "+str(p[4].getsourcepos()))
+		if(p[6][0].split(" ")[0]!="Int"):       raise AssertionError("[Sementic Error] Expression should be boolean '"+p[6].getstr()+"' at Line: "+str(p[6].getsourcepos()))
+		if(p[2].type!="Int"):       raise AssertionError("[Sementic Error] Expression should be boolean '"+p[3].getstr()+"' at Line: "+str(p[3].getsourcepos()))		
+		return ("Void For_Range",p[2],p[4],p[6],p[9])
 	
 	
 	@pg.production("expr : Token.Name.Print Token.Operator.LBrac Token.Literal.String Token.Operator.RBrac")

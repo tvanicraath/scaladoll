@@ -48,8 +48,10 @@ class Token:
 		if(value=="else"):	return "Else"
 		if(value=="Array"):	return "Array"
 		if(value=="while"):	return "While"
+		if(value=="<-"):	return "InRange"
 
 	def removedots(self,name,value):
+
 		name=str(name)
 		if(name=="Token.Operator"):
 			name=name+"."+self.opname(value)
@@ -61,6 +63,10 @@ class Token:
 				name=name+"."+self.keyname(value)
 		if(value=="Array"):
 			name="Token.Keyword.Array"
+		if(value=="to"):
+			name="Token.Keyword.To"
+		if(value=="until"):
+			name="Token.Keyword.Until"
 
 
 		return name			
