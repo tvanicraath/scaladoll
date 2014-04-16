@@ -3,6 +3,7 @@ from parser import Parser
 from itertools import *
 from collections import defaultdict
 seed=118
+
 def newvar(type):
                 global seed
                 seed+=1
@@ -24,13 +25,17 @@ def recprint(what,offset):
                         print what.gettokentype(),what.getstr()
                         return ( (what.gettype(),what.getstr()), [] )
 
+		if(isinstance(what,int)):
+			print "intval: "+str(what)
+			return ( (None,None), [])
+
                 print what[0]
 		if(what[0].split(" ")[-1]=="ATOM" or what[0].split(" ")[-1]=="Const" or what[0].split(" ")[-1]=="ASSIGN"):
 #			print "i am return "+str(recprint(what[1],offset+1))
 			ans=recprint(what[1],offset+1)
 			var=newvar(ans[0][0])
 			L=ans[1]
-			L.append( ( ( (var,ans[0][0]), (":=","COPY"), (ans[0][1]) ), "COPY") )
+			L.append( ( ( (var,ans[0][0]), (":=","COPY"), (ans[0][1],ans[0][0]) ,ans[0][0]), "COPY") )
 			return ( (ans[0][0],var), L)
 
 		if(what[0].split(" ")[-1]=="EXP"):
@@ -42,7 +47,7 @@ def recprint(what,offset):
 				optype=op[0][0]
 				type=what[0].split(" ")[0]
 				var=newvar(type)
-				L.append( ( ( (var,type), (":=","COPY"), (opret) ), "COPY" ) )
+				L.append( ( ( (var,type), (":=","COPY"), (opret,optype) ), "COPY" ) )
 				return ( (type,var), L)
 
 			else:
@@ -82,8 +87,8 @@ def recprint(what,offset):
 				return ( e1[0], L1)
 
 		if(what[0].split(" ")[0]=="VAR"):
-			recprint(what[1],offset+1)
-			recprint(what[2],offset+1)
+			#recprint(what[1],offset+1)
+			#recprint(what[2],offset+1)
 			return ( (None,None), [])
 
 		if(what[0].split(" ")[-1]=="EPSILON"):
@@ -104,10 +109,10 @@ def recprint(what,offset):
 
 			newt=sif[0][0]
 			newv=newvar(newt)
-			sif[1].append( ( ( (newv,newt), (":=","COPY"), (sif[0][1]) ), "COPY") )
+			sif[1].append( ( ( (newv,newt), (":=","COPY"), (sif[0][1],newt) ), "COPY") )
 			
 			if(selse[0][0]!=None):
-				selse[1].append( ( ( (newv,newt), (":=","COPY"), (selse[0][1]) ), "COPY") )
+				selse[1].append( ( ( (newv,newt), (":=","COPY"), (selse[0][1],newt) ), "COPY") )
 
 			L=[]
 			L=condn[1]
@@ -134,7 +139,7 @@ def recprint(what,offset):
 
 			newt=strue[0][0]
 			newv=newvar(newt)
-			strue[1].append( ( ( (newv,newt), (":=","COPY"), (strue[0][1]) ), "COPY") )
+			strue[1].append( ( ( (newv,newt), (":=","COPY"), (strue[0][1],newt) ), "COPY") )
 
 			startlabel=newlabel()	
 			L=[]
@@ -150,6 +155,64 @@ def recprint(what,offset):
 			L=L+strue[1];
 			L.append( ( ( ('L', 'LABEL'), ('LABEL', endlabel) ), 'LABEL') )
 			return ( (newt, newv), L)
+
+
+		if(what[0].split(" ")[-1]=="GetVal1"):
+			array=recprint(what[1],offset+1)
+			index=recprint(what[2],offset+1)
+			var=newvar(array[0][0])
+
+			L=index[1]
+			L.append( ( ( (var,array[0][0]), (":=","COPY"), (array[0][1],"ARRAY"), (index[0][1],"INDEX")), "GET_VAL") )
+
+			return ( (array[0][0],var), L)
+
+		if(what[0].split(" ")[-1]=="SetVal1"):
+			array=recprint(what[1],offset+1)
+			index=recprint(what[2],offset+1)
+			value=recprint(what[3],offset+1)
+			newv=newvar(array[0][0])
+
+			L=index[1]+value[1]
+			L.append( ( ( (array[0][1],array[0][0]), (index[0][1],"INDEX"), (":=","COPY"), (value[0][1],value[0][0])), "SET_VAL") )
+			L.append( ( ( (newv,array[0][0]), (":=","COPY"), (value[0][1],value[0][0]) ), "COPY") )
+			
+			return ( (array[0][0],newv), L)
+
+
+		if(what[0].split(" ")[-1]=="GetVal2"):
+			array=recprint(what[1],offset+1)
+			index1=recprint(what[2],offset+1)
+			index2=recprint(what[3],offset+1)
+			size2=int(what[5])
+			var=newvar(array[0][0])
+
+			L=index1[1]+index2[1]
+
+			actindex=newvar("Int")
+			L.append( ( ( (actindex,"Int"), (":=","ASSIGNMENT"), (index1[0][1],"Int"), ("*","OPR"), (size2,"Int") ), "ASSIGNMENT" ) )
+			L.append( ( ( (actindex,"Int"), (":=","ASSIGNMENT"), (actindex,"Int"), ("+","OPR"), (index2[0][1],"Int") ), "ASSIGNMENT" ) )
+			L.append( ( ( (var,array[0][0]), (":=","COPY"), (array[0][1],"ARRAY"), (actindex,"INDEX")), "GET_VAL") )
+
+			return ( (array[0][0],var), L)
+
+                if(what[0].split(" ")[-1]=="SetVal2"):
+                        array=recprint(what[1],offset+1)
+                        index1=recprint(what[2],offset+1)
+                        index2=recprint(what[3],offset+1)
+			value=recprint(what[4],offset+1)
+                        size2=int(what[6])
+                        newv=newvar(array[0][0])
+
+                        L=index1[1]+index2[1]+value[1]
+
+                        actindex=newvar("Int")
+                        L.append( ( ( (actindex,"Int"), (":=","ASSIGNMENT"), (index1[0][1],"Int"), ("*","OPR"), (size2,"Int") ), "ASSIGNMENT" ) )
+                        L.append( ( ( (actindex,"Int"), (":=","ASSIGNMENT"), (actindex,"Int"), ("+","OPR"), (index2[0][1],"Int") ), "ASSIGNMENT" ) )
+                        L.append( ( ( (array[0][1],array[0][0]), (actindex,"INDEX"), (":=","COPY"), (value[0][1],value[0][0])), "SET_VAL") )
+			L.append( ( ( (newv,array[0][0]), (":=","COPY"), (value[0][1],value[0][0]) ), "COPY") )
+
+                        return ( (array[0][0],newv), L)
 
 		'''
 		if(what[0].split(" ")[-1]=="For_Range"):

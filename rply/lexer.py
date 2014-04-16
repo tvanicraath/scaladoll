@@ -79,6 +79,9 @@ class Token:
 		self.lineno=5
 		self.sourcepos=34
 		self.type=None
+		self.arraytype=None
+		self.size1=0
+		self.size2=0
 	
 	def gettokentype(self):
 		return self.name
@@ -145,6 +148,7 @@ class Lexer:
 		start_of_scope=["Token.Keyword.Def","Token.Keyword.If","Token.Keyword.Else","Token.Keyword.For","Token.Keyword.While"]
 		variable_names={}
 		token_type={}
+		array_info={}
 		i=0
 		uniq_counter=102
 		curly_count=0
@@ -184,10 +188,41 @@ class Lexer:
 					uniq_counter+=1
 					token.value=newname
 					token.type=tokens[i+2].value
+					if(token.type=="Array"):
+	                                        token.arraytype=tokens[i+2].value
+         	                                token.type=tokens[i+4].value
+#						print "i am array"
+						if(tokens[i+3].value!="[" or tokens[i+5].value!="]" or tokens[i+6].value!="(" or tokens[i+4].name!="Token.Keyword.Type"):
+							raise AssertionError("[Syntax Error] In array declaration at '"+token.value+"'  (Line: "+str(token.getsourcepos())+").")	
+						if(tokens[i+8].value==","):
+							token.size1=int(tokens[i+7].value)
+							token.size2=int(tokens[i+9].value)
+							array_info[newname]=("Array2",token.type,token.size1,token.size2)
+							mynext=tokens[i+10]
+						else:	
+							token.size1=int(tokens[i+7].value)
+							array_info[newname]=("Array1",token.type,token.size1)
+							mynext=tokens[i+8]
+						if(mynext.value!=")"):
+							raise AssertionError("[Syntax Error] In array declaration at '"+mynext.value+"'  (Line: "+str(mynext.getsourcepos())+").") 
+
 					token_type[newname]=token.type
 
 				elif(len(tokens)>(i+1) and tokens[i+1].name=="Token.Operator.LBrac"):
 					#its function, do nothing
+					if(token.value in variable_names):
+						#is array
+						(newname,scope)=variable_names[token.value][-1]
+						if(not newname in array_info):
+                                                        raise AssertionError("[Syntax Error] Cannot use variable like this (Line: "+str(token.getsourcepos())+").")
+
+						token.value=newname
+						token.type=token_type[newname]
+						if(array_info[newname][0]=="Array1"):
+							token.size1=array_info[newname][2]
+						else:
+							token.size1=array_info[newname][2]
+							token.size2=array_info[newname][3]
 					pass
 
 				else:
@@ -195,6 +230,8 @@ class Lexer:
 					if(not token.value in variable_names):
 						sys.exit("[Sementic Error] Cannot use variable '"+ token.value + "' without initializing it (Line: "+str(token.getsourcepos())+").")
 					(newname,scope)=variable_names[token.value][-1]
+                                        if(newname in array_info):
+                                                raise AssertionError("[Syntax Error] Cannot use array like this (Line: "+str(token.getsourcepos())+").")
 					token.value=newname
 					token.type=token_type[newname]
 			   except IndexError:

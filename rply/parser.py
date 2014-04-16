@@ -113,9 +113,17 @@ class Parser:
 	def vtype_op(p):
 		return ("Type", p[0])
 
-	@pg.production("vtype : Token.Keyword.Array Token.Operator.LSquare vtype Token.Operator.RSquare")
+	@pg.production("vtype : Token.Keyword.Array Token.Operator.LSquare Token.Keyword.Type Token.Operator.RSquare sizeval")
 	def vtype_op2(p):
 		return ("Array of type",p[2])
+
+	@pg.production("sizeval : Token.Operator.LBrac Token.Literal.Number.Integer Token.Operator.RBrac")
+	def arr_sizeval_op(p):
+		return ("Array Size",None)
+        @pg.production("sizeval : Token.Operator.LBrac Token.Literal.Number.Integer Token.Operator.Comma Token.Literal.Number.Integer Token.Operator.RBrac")
+        def arr_sizeval_op(p):
+                return ("Array Size",None)
+
 
 	@pg.production("arglist : Token.Name Token.Keyword.Colon vtype")
 	def arglist_op(p):
@@ -247,6 +255,66 @@ class Parser:
 		type=p[1][0].split(" ")[0]
 		return (type+" EXP", p[1]);
 
+
+	@pg.production("expr : Token.Name Token.Operator.LBrac expr Token.Operator.RBrac")
+	def array_getval1(p):
+		if(p[2][0].split(" ")[0]!="Int"):
+			raise AssertionError("[Sementic Error] Type mismatch at '"+p[0].getstr().split("@")[0]+"' at Line: "+str(p[0].getsourcepos()))
+		print p[0].size1,p[0].size2
+		if(p[0].size2!=0):
+			raise AssertionError("[Sementic Error] Use 1D array at '"+p[0].getstr().split("@")[0]+"' at Line: "+str(p[0].getsourcepos()))
+		return (p[0].type+" GetVal1",p[0],p[2],p[0].size1)
+
+        @pg.production("expr : Token.Name Token.Operator.LBrac expr Token.Operator.Comma expr Token.Operator.RBrac")
+        def array_getval2(p):
+                if(p[2][0].split(" ")[0]!="Int" or p[4][0].split(" ")[0]!="Int"):
+                        raise AssertionError("[Sementic Error] Type mismatch at '"+p[0].getstr().split("@")[0]+"' at Line: "+str(p[0].getsourcepos()))
+		if(p[0].size2==0):
+			raise AssertionError("[Sementic Error] Use 2D array at '"+p[0].getstr().split("@")[0]+"' at Line: "+str(p[0].getsourcepos()))
+                return (p[0].type+" GetVal2",p[0],p[2],p[4],p[0].size1,p[0].size2)
+
+        @pg.production("expr : Token.Name Token.Operator.LBrac expr Token.Operator.RBrac Token.Operator.Equal expr")
+        def array_init1(p):
+                if(p[0].size2!=0):
+                        raise AssertionError("[Sementic Error] Use 1D array at '"+p[0].getstr().split("@")[0]+"' at Line: "+str(p[0].getsourcepos()))
+		if(p[2][0].split(" ")[0]!="Int"):
+			raise AssertionError("[Sementic Error] Use integer index '"+p[0].getstr().split("@")[0]+"' at Line: "+str(p[0].getsourcepos()))
+		
+                t0=p[0].type
+                t1=p[5][0].split(" ")[0]
+                if(t0=="Int" or t0=="Float"):   t0="Int"
+                if(t1=="Int" or t1=="Float"):   t1="Int"
+                if(t0==t1):
+                        if(p[0].type=="Int" and p[5][0].split(" ")[0]=="Float"):
+                                print ("[Warning] Implicit typecast to INT at "+p[0].getstr().split("@")[0]+"' at Line: "+str(p[0].getsourcepos()))
+                                t0="Int"
+                        elif(p[0].type=="Float" or p[5][0].split(" ")[0]=="Float"):        t0="Float"
+                        return (t0+" SetVal1",p[0],p[2],p[5],p[0].size1)
+                else:
+                        raise AssertionError("[Sementic Error] Type mismatch at '"+p[0].getstr().split("@")[0]+"' at Line: "+str(p[0].getsourcepos()))
+
+        @pg.production("expr : Token.Name Token.Operator.LBrac expr Token.Operator.Comma expr Token.Operator.RBrac Token.Operator.Equal expr")
+        def array_init2(p):
+                if(p[0].size2==0):
+                        raise AssertionError("[Sementic Error] Use 2D array at '"+p[0].getstr().split("@")[0]+"' at Line: "+str(p[0].getsourcepos()))
+                if(p[2][0].split(" ")[0]!="Int" or p[4][0].split(" ")[0]!="Int"):
+                        raise AssertionError("[Sementic Error] Use integer index '"+p[0].getstr().split("@")[0]+"' at Line: "+str(p[0].getsourcepos()))
+
+                t0=p[0].type
+                t1=p[7][0].split(" ")[0]
+                if(t0=="Int" or t0=="Float"):   t0="Int"
+                if(t1=="Int" or t1=="Float"):   t1="Int"
+                if(t0==t1):
+                        if(p[0].type=="Int" and p[7][0].split(" ")[0]=="Float"):
+                                print ("[Warning] Implicit typecast to INT at "+p[0].getstr().split("@")[0]+"' at Line: "+str(p[0].getsourcepos()))
+                                t0="Int"
+                        elif(p[0].type=="Float" or p[7][0].split(" ")[0]=="Float"):        t0="Float"
+                        return (t0+" SetVal2",p[0],p[2],p[4],p[7],p[0].size1,p[0].size2)
+                else:
+                        raise AssertionError("[Sementic Error] Type mismatch at '"+p[0].getstr().split("@")[0]+"' at Line: "+str(p[0].getsourcepos()))
+
+
+
 	@pg.production("expr : expr_atomic")
 	def expr_atomic(p):
 		(type,fake)=p[0]
@@ -295,6 +363,10 @@ class Parser:
 		if(isinstance(what,Token)):
 			print what.gettokentype(),what.getstr()
 			return
+		if(isinstance(what,int)):
+			print ("intval: "+str(what))
+			return
+
 	
 		print what[0]
 		for which in what[1:]:
